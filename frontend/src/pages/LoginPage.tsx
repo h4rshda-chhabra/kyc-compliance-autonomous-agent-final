@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, LoaderCircle, Sparkles } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useLogin } from "@/hooks/useAuth";
 import { toRole } from "@/lib/roles";
 import { logAudit } from "@/lib/auditLog";
@@ -27,7 +27,6 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<LoginErrors>({});
-  const [demoLoading, setDemoLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -53,25 +52,6 @@ export function LoginPage() {
       setApiError(message);
     }
   }
-
-  async function handleExploreDemo() {
-    setDemoLoading(true);
-    setApiError(null);
-    try {
-      await login.mutateAsync({ email: "demo@example.com", password: "password123" });
-      logAudit("logged_in", "session");
-      // Fetch user data to determine role
-      const { data: user } = await apiClient.get<User>("/auth/me");
-      const role = toRole(user.role);
-      navigate(role === "admin" ? "/companies" : "/dashboard");
-    } catch {
-      setApiError("The demo account is not available on this backend yet.");
-    } finally {
-      setDemoLoading(false);
-    }
-  }
-
-  const busy = login.isPending || demoLoading;
 
   return (
     <div className="space-y-10">
@@ -162,34 +142,16 @@ export function LoginPage() {
         <div className="space-y-4 pt-4">
           <button
             type="submit"
-            disabled={busy}
+            disabled={login.isPending}
             className="h-14 w-full bg-[#4edea3] font-bold uppercase tracking-widest text-[#003824] transition-all duration-200 hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
-            {login.isPending && !demoLoading ? (
+            {login.isPending ? (
               <span className="flex items-center justify-center gap-2">
                 <LoaderCircle className="size-4 animate-spin" />
                 Signing in...
               </span>
             ) : (
               "Sign In"
-            )}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={handleExploreDemo}
-            className="h-14 w-full border border-[#3c4a42] font-bold uppercase tracking-widest text-[#e2e3e0] transition-all duration-200 hover:bg-[#282a29] disabled:opacity-60"
-          >
-            {demoLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <LoaderCircle className="size-4 animate-spin" />
-                Loading demo...
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <Sparkles className="size-4" />
-                Explore the demo
-              </span>
             )}
           </button>
         </div>
