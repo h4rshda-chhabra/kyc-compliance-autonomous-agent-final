@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.deps import require_compliance_officer
+from app.core.deps import get_current_user_dep
 from app.database import get_db
 from app.models import AuditLog, Company, MonitoringRun, User
 from app.services.company_directory import get_company as get_directory_company
@@ -54,7 +54,7 @@ def get_monitoring_run(run_id: uuid.UUID, db: Session = Depends(get_db)) -> dict
 def trigger_manual_run(
     company_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_compliance_officer()),
+    current_user: User = Depends(get_current_user_dep),
 ) -> dict:
     company = db.get(Company, company_id)
     if company is None:
