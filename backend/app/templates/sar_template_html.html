@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suspicious Activity Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0f3460 0%, #1a5f7a 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 4px solid #e74c3c;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        .header .classification {
+            font-size: 11px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* Meta Section */
+        .meta-section {
+            background: #ecf0f1;
+            padding: 24px 40px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+
+        .meta-value {
+            font-size: 15px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .meta-value.alert {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .meta-value.warning {
+            color: #f39c12;
+            font-weight: 600;
+        }
+
+        .meta-value.safe {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        /* Content Section */
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f3460;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-left: 4px solid #3498db;
+            padding-left: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title .number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+
+        .subsection {
+            margin-bottom: 16px;
+        }
+
+        .subsection-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #34495e;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+        }
+
+        /* Lists and Tables */
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        li {
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        li strong {
+            color: #0f3460;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 13px;
+        }
+
+        thead {
+            background-color: #ecf0f1;
+        }
+
+        th {
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 700;
+            color: #34495e;
+            border-bottom: 2px solid #bdc3c7;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Risk Score Badge */
+        .risk-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        .risk-badge.high {
+            background-color: #fadbd8;
+            color: #c0392b;
+            border: 2px solid #e74c3c;
+        }
+
+        .risk-badge.medium {
+            background-color: #fef5e7;
+            color: #d68910;
+            border: 2px solid #f39c12;
+        }
+
+        .risk-badge.low {
+            background-color: #d5f4e6;
+            color: #0e6251;
+            border: 2px solid #27ae60;
+        }
+
+        /* Alert Box */
+        .alert-box {
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-left: 4px solid;
+            background-color: #fafafa;
+            border-radius: 2px;
+        }
+
+        .alert-box.alert {
+            border-left-color: #e74c3c;
+            background-color: #fadbd8;
+        }
+
+        .alert-box.warning {
+            border-left-color: #f39c12;
+            background-color: #fef5e7;
+        }
+
+        .alert-box.info {
+            border-left-color: #3498db;
+            background-color: #ebf5fb;
+        }
+
+        .alert-box strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Footer */
+        .footer {
+            background: #34495e;
+            color: white;
+            padding: 20px 40px;
+            font-size: 11px;
+            text-align: center;
+            border-top: 1px solid #2c3e50;
+        }
+
+        .footer .date {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-item {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-left: 2px solid #bdc3c7;
+            padding-left: 16px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #3498db;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #3498db;
+        }
+
+        .timeline-item:last-child {
+            border-left-color: transparent;
+        }
+
+        .timeline-date {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .timeline-content {
+            font-size: 13px;
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .header {
+                page-break-after: avoid;
+            }
+        }
+
+        /* Controls */
+        .controls {
+            padding: 20px 40px;
+            background: #f5f7fa;
+            border-top: 1px solid #ecf0f1;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>SUSPICIOUS ACTIVITY REPORT (SAR)</h1>
+            <div class="subtitle">Automated KYC Compliance Investigation</div>
+            <div class="classification">CONFIDENTIAL // LAW ENFORCEMENT SENSITIVE // COMPLIANCE DIVISION</div>
+        </div>
+
+        <!-- Meta Info -->
+        <div class="meta-section">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">Target Company</span>
+                    <span class="meta-value">{{ company_name }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Risk Level</span>
+                    <span class="meta-value {{ risk_level_class }}">{{ risk_level | upper }} ({{ risk_score }}/100)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Jurisdiction</span>
+                    <span class="meta-value">{{ jurisdiction }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Filing Date</span>
+                    <span class="meta-value">{{ filing_date }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Registration Number</span>
+                    <span class="meta-value">{{ registration_number }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Industry</span>
+                    <span class="meta-value">{{ industry }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- 1. Executive Summary -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">1</span>
+                    Executive Summary
+                </div>
+                <div class="alert-box info">
+                    <strong>Investigation Trigger:</strong> {{ trigger_reason }}
+                </div>
+                <p><strong>Analyst Action:</strong> {{ analyst_recommendation }}</p>
+                <p style="margin-top: 12px;">{{ executive_summary }}</p>
+            </div>
+
+            <!-- 2. Subject Information -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">2</span>
+                    Subject Information
+                </div>
+
+                <div class="subsection">
+                    <div class="subsection-title">Corporate Entity</div>
+                    <ul>
+                        <li><strong>Legal Name:</strong> {{ company_name }}</li>
+                        <li><strong>Registration Number:</strong> {{ registration_number }}</li>
+                        <li><strong>Jurisdiction:</strong> {{ jurisdiction }}</li>
+                        <li><strong>Industry Sector:</strong> {{ industry }}</li>
+                    </ul>
+                </div>
+
+                <div class="subsection">
+                    <div class="subsection-title">Key Associated Personnel</div>
+                    {{ subject_directors_list }}
+                </div>
+            </div>
+
+            <!-- 3. Reason for Investigation -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">3</span>
+                    Reason for Investigation
+                </div>
+                <p>{{ investigation_trigger_details }}</p>
+            </div>
+
+            <!-- 4. Timeline of Events -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">4</span>
+                    Timeline of Events
+                </div>
+                <div class="timeline">
+                    {{ timeline_events_html }}
+                </div>
+            </div>
+
+            <!-- 5. Sanctions Findings -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">5</span>
+                    Sanctions Findings
+                </div>
+                {{ sanctions_findings_details }}
+            </div>
+
+            <!-- 6. Politically Exposed Persons (PEP) -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">6</span>
+                    Politically Exposed Persons (PEP)
+                </div>
+                {{ pep_findings_details }}
+            </div>
+
+            <!-- 7. Cross-Director Risk Contamination -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">7</span>
+                    Cross-Company Director Risk
+                </div>
+                {{ contamination_findings_details }}
+            </div>
+
+            <!-- 8. Adverse Media Findings -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">8</span>
+                    Adverse Media Findings
+                </div>
+                {{ adverse_media_details }}
+            </div>
+
+            <!-- 9. Risk Assessment -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">9</span>
+                    Risk Assessment & Rationale
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <span class="risk-badge {{ risk_level_class }}">
+                        RISK SCORE: {{ risk_score }}/100 • LEVEL: {{ risk_level | upper }}
+                    </span>
+                </div>
+
+                <div class="subsection">
+                    <div class="subsection-title">System Rationale</div>
+                    <p>{{ risk_rationale }}</p>
+                </div>
+            </div>
+
+            <!-- 10. Analyst Recommendation -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">10</span>
+                    Analyst Recommendation & Confidence
+                </div>
+
+                <div class="alert-box {% if analyst_recommendation == 'Reject Onboarding' %}alert{% elif analyst_recommendation == 'Escalate to Manual Review' %}warning{% else %}info{% endif %}">
+                    <strong>Recommendation:</strong> {{ analyst_recommendation }}
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <strong>Decision Rationale:</strong>
+                    <p style="margin-top: 6px;">{{ analyst_rationale }}</p>
+                </div>
+
+                <div>
+                    <strong>System Confidence Score:</strong>
+                    <p style="margin-top: 6px;">{{ confidence_score }}/100</p>
+                </div>
+            </div>
+
+            <!-- 11. Narrative Summary -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="number">11</span>
+                    Narrative Summary
+                </div>
+                <p>{{ narrative_summary_text }}</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="date">Generated: {{ generated_date }}</span>
+            <span>KYC Autonomous Compliance Auditor System | Page <span id="page"></span> of <span id="pagecount"></span></span>
+        </div>
+
+        <!-- Controls (for screen, hidden on print) -->
+        <div class="controls no-print">
+            <button class="btn btn-primary" onclick="window.print()">📥 Download as PDF</button>
+            <button class="btn btn-secondary" onclick="window.history.back()">← Back</button>
+        </div>
+    </div>
+</body>
+</html>

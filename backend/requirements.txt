@@ -1,0 +1,40 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Data / validation
+pydantic==2.10.4
+pydantic-settings==2.7.1
+email-validator>=2.0.0
+
+# Database
+sqlalchemy==2.0.36
+alembic==1.14.0
+psycopg2-binary==2.9.10
+
+# Scheduler
+apscheduler==3.10.4
+
+# AI providers
+google-generativeai==0.8.3
+openai==1.58.1
+
+# Vector search
+faiss-cpu==1.9.0
+
+# Utilities
+python-dotenv==1.0.1
+httpx==0.28.1
+python-multipart==0.0.32
+feedparser==6.0.12
+rapidfuzz==3.14.5
+markdown==3.10.2
+xhtml2pdf==0.2.17
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+
+# Lint / format
+ruff==0.8.4
+black==24.10.0
