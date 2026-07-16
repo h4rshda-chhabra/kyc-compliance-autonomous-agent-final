@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user_dep
+from app.core.deps import get_current_user_dep, require_compliance_officer, require_admin
 from app.database import get_db
 from app.models import AuditLog, Company, MonitoringRun, User
 from app.services.company_directory import get_company as get_directory_company
@@ -54,7 +54,7 @@ def get_monitoring_run(run_id: uuid.UUID, db: Session = Depends(get_db)) -> dict
 def trigger_manual_run(
     company_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_dep),
+    current_user: User = Depends(require_compliance_officer()),
 ) -> dict:
     company = db.get(Company, company_id)
     if company is None:
@@ -105,6 +105,77 @@ def trigger_manual_run(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/companies/{company_id}/onboard")
+def onboard_company(
+    company_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin()),
+) -> dict:
+    """Admin-only: Onboard a company from the sanctions dataset without running a scan.
+
+    This just materializes the company row and marks it as ready for monitoring.
+    The first scan will run on the next scheduled sweep.
+    """
+    company = db.get(Company, company_id)
+
+    if company is None:
+        # First time: materialize from dataset
+        entity = get_directory_company(company_id)
+        if entity is None:
+            raise HTTPException(status_code=404, detail="Company not found in dataset")
+        company = Company(
+            id=entity.id,
+            legal_name=entity.name,
+            jurisdiction=entity.countries,
+            industry=None,
+            monitoring_status="onboarding",
+            risk_level="unknown",
+            onboarded_at=datetime.now(UTC),
+        )
+        db.add(company)
+        db.add(AuditLog(
+            id=uuid.uuid4(),
+            actor=current_user.email,
+            action="company_onboarded",
+            resource_type="company",
+            resource_id=company.id,
+            event_metadata={"onboarded_by": current_user.full_name},
+        ))
+        db.commit()
+        db.refresh(company)
+    else:
+        # Company already exists—check if deactivated
+        if not company.is_active:
+            raise HTTPException(
+                status_code=409,
+                detail=f"This company has been deactivated. Reason: {company.deactivation_reason or 'No reason provided'}"
+            )
+
+        # Ensure it's in onboarding status
+        if company.monitoring_status == "not_monitored":
+            company.monitoring_status = "onboarding"
+            company.onboarded_at = datetime.now(UTC)
+            db.add(AuditLog(
+                id=uuid.uuid4(),
+                actor=current_user.email,
+                action="company_onboarded",
+                resource_type="company",
+                resource_id=company.id,
+                event_metadata={"onboarded_by": current_user.full_name},
+            ))
+            db.commit()
+            db.refresh(company)
+        # If already onboarded (any status != "not_monitored"), just return success
+
+    return {
+        "id": company.id,
+        "legal_name": company.legal_name,
+        "monitoring_status": company.monitoring_status,
+        "risk_level": company.risk_level,
+        "onboarded_at": company.onboarded_at,
+    }
 
 
 @router.post("/watchlist/simulate")

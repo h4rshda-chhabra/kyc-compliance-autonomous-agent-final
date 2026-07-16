@@ -30,7 +30,7 @@ class UserResponse(BaseModel):
     id: str
     email: str
     full_name: str
-    role: UserRole
+    role: str
 
 
 class TokenResponse(BaseModel):
@@ -38,7 +38,13 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post(
+    "/register",
+    response_model=UserResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Email already exists"},
+    }
+)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == payload.email).first()
@@ -68,7 +74,14 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Invalid email or password"},
+        status.HTTP_403_FORBIDDEN: {"description": "Account deactivated"},
+    }
+)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email.lower().strip()).first()
     if not user or not verify_password(payload.password, user.hashed_password):
@@ -95,11 +108,18 @@ def logout() -> dict:
     return {"detail": "logged out"}
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated or session expired"},
+        status.HTTP_403_FORBIDDEN: {"description": "User account is deactivated"},
+    }
+)
 def get_me(current_user: User = Depends(get_current_user_dep)):
     return {
         "id": str(current_user.id),
         "email": current_user.email,
         "full_name": current_user.full_name,
-        "role": current_user.role
+        "role": current_user.role.value
     }

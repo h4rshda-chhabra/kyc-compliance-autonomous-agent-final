@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LoaderCircle, Sparkles } from "lucide-react";
 import { useLogin } from "@/hooks/useAuth";
+import { toRole } from "@/lib/roles";
 import { logAudit } from "@/lib/auditLog";
+import { apiClient } from "@/services/apiClient";
+import type { User } from "@/types/models";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -39,10 +42,10 @@ export function LoginPage() {
     try {
       await login.mutateAsync({ email, password });
       logAudit("logged_in", "session");
-      // Real role comes from the backend (/auth/me); RequireRole on
-      // /dashboard bounces admins to /companies automatically, so a single
-      // landing target works for both roles.
-      navigate("/dashboard");
+      // Fetch user data to determine role
+      const { data: user } = await apiClient.get<User>("/auth/me");
+      const role = toRole(user.role);
+      navigate(role === "admin" ? "/companies" : "/dashboard");
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
@@ -57,7 +60,10 @@ export function LoginPage() {
     try {
       await login.mutateAsync({ email: "demo@example.com", password: "password123" });
       logAudit("logged_in", "session");
-      navigate("/dashboard");
+      // Fetch user data to determine role
+      const { data: user } = await apiClient.get<User>("/auth/me");
+      const role = toRole(user.role);
+      navigate(role === "admin" ? "/companies" : "/dashboard");
     } catch {
       setApiError("The demo account is not available on this backend yet.");
     } finally {

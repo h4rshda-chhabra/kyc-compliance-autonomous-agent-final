@@ -53,6 +53,22 @@ export interface WatchlistSimulateResult {
   affected_company_ids: string[];
 }
 
+export function useOnboardCompany() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (companyId: string) => {
+      const { data } = await apiClient.post(
+        `/monitor/companies/${companyId}/onboard`
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
+  });
+}
+
 export function useSimulateWatchlistUpdate() {
   const queryClient = useQueryClient();
   return useMutation({

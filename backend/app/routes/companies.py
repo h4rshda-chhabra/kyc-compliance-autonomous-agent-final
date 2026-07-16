@@ -1,4 +1,6 @@
+import uuid
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -6,7 +8,6 @@ from app.models import Company
 from app.schemas import CompanyCreate
 from app.services.company_directory import DirectoryCompany, list_companies
 from app.services.company_directory import get_company as get_directory_company
-import uuid
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -49,13 +50,21 @@ def _serialize_directory(entity: DirectoryCompany) -> dict:
         "onboarded_at": None,
         "created_at": None,
         "updated_at": None,
+        "news_monitoring_enabled": True,
+        "news_monitoring_interval_minutes": 1440,
+        "last_news_check_at": None,
         "is_active": True,
         "deactivated_at": None,
         "deactivation_reason": None,
     }
 
 
-@router.get("")
+@router.get(
+    "",
+    responses={
+        400: {"description": "Invalid status or scope parameter"},
+    }
+)
 def list_all_companies(
     q: str | None = None,
     status: str = "active",
@@ -84,7 +93,7 @@ def list_all_companies(
     elif status == "inactive":
         scanned_query = scanned_query.filter(Company.is_active == False)  # noqa: E712
     if scope == "monitored":
-        scanned_query = scanned_query.filter(Company.monitoring_status.notin_(["onboarding", "not_monitored"]))
+        scanned_query = scanned_query.filter(Company.monitoring_status != "not_monitored")
     scanned = {c.id: c for c in scanned_query.all()}
 
     result = [_serialize_scanned(c) for c in scanned.values()]
@@ -100,7 +109,12 @@ def list_all_companies(
     return result
 
 
-@router.get("/{company_id}")
+@router.get(
+    "/{company_id}",
+    responses={
+        404: {"description": "Company not found"},
+    }
+)
 def get_company(company_id: str, db: Session = Depends(get_db)) -> dict:
     company = db.get(Company, company_id)
     if company is not None:
@@ -112,7 +126,12 @@ def get_company(company_id: str, db: Session = Depends(get_db)) -> dict:
     return _serialize_directory(entity)
 
 
-@router.post("")
+@router.post(
+    "",
+    responses={
+        400: {"description": "Invalid company data"},
+    }
+)
 def create_custom_company(payload: CompanyCreate, db: Session = Depends(get_db)) -> dict:
     company_id = f"CUSTOM-{uuid.uuid4().hex[:8]}"
     company = Company(
@@ -129,8 +148,6 @@ def create_custom_company(payload: CompanyCreate, db: Session = Depends(get_db))
     return _serialize_scanned(company)
 
 
-from pydantic import BaseModel
-
 class UpdateCadenceRequest(BaseModel):
     # No news_monitoring_interval_minutes field: monitoring frequency is derived
     # automatically from risk level (see app/services/monitoring_cadence.py and
@@ -139,7 +156,12 @@ class UpdateCadenceRequest(BaseModel):
     news_monitoring_enabled: bool | None = None
 
 
-@router.patch("/{company_id}/cadence")
+@router.patch(
+    "/{company_id}/cadence",
+    responses={
+        404: {"description": "Company not found"},
+    }
+)
 def update_company_cadence(company_id: str, payload: UpdateCadenceRequest, db: Session = Depends(get_db)) -> dict:
     company = db.get(Company, company_id)
     if not company:

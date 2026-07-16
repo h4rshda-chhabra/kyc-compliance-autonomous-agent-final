@@ -3,13 +3,7 @@ import { apiClient } from "@/services/apiClient";
 import type { SARReport } from "@/types/models";
 
 export function useSarReports() {
-  return useQuery({
-    queryKey: ["sar-reports"],
-    queryFn: async () => {
-      const { data } = await apiClient.get<SARReport[]>("/review/sar");
-      return data;
-    },
-  });
+  return useComplianceQueue();
 }
 
 export function useSarReport(id: string | undefined) {

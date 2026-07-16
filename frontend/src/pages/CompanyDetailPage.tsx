@@ -276,25 +276,27 @@ export function CompanyDetailPage() {
                     Timeline
                   </Button>
                 </Link>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={triggerRun.isPending}
-                  onClick={() => triggerRun.mutate(company.id)}
-                >
-                  <RefreshCw
-                    data-icon="inline-start"
-                    className={triggerRun.isPending ? "animate-spin" : undefined}
-                  />
-                  {triggerRun.isPending ? "Scanning..." : "Scan now"}
-                </Button>
                 {role === "compliance_officer" ? (
-                  <Link to={`/companies/${company.id}/execute`}>
-                    <Button variant="default" size="sm" className="cursor-pointer">
-                      <Sparkles data-icon="inline-start" />
-                      Run Audit
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={triggerRun.isPending}
+                      onClick={() => triggerRun.mutate(company.id)}
+                    >
+                      <RefreshCw
+                        data-icon="inline-start"
+                        className={triggerRun.isPending ? "animate-spin" : undefined}
+                      />
+                      {triggerRun.isPending ? "Scanning..." : "Scan now"}
                     </Button>
-                  </Link>
+                    <Link to={`/companies/${company.id}/execute`}>
+                      <Button variant="default" size="sm" className="cursor-pointer">
+                        <Sparkles data-icon="inline-start" />
+                        Run Audit
+                      </Button>
+                    </Link>
+                  </>
                 ) : null}
               </>
             }

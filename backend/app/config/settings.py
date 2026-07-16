@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     debug: bool = True
     api_v1_prefix: str = "/api/v1"
 
-    # CORS
-    cors_allow_origins: list[str] = ["http://localhost:5173"]
+    # CORS - Restrict to specific origins
+    cors_allow_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # Database
     database_url: str = "postgresql+psycopg2://kyc:kyc@localhost:5432/kyc_auditor"

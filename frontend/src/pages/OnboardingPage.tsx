@@ -7,6 +7,7 @@ import {
   Gavel,
   PlusCircle,
   Search,
+  Ban,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useDashboardSummary } from "@/hooks/useDashboardSummary";
-import { useTriggerMonitoringRun } from "@/hooks/useMonitoringRuns";
+import { useOnboardCompany } from "@/hooks/useMonitoringRuns";
 import { CreateCompanyDialog } from "@/components/CreateCompanyDialog";
 import type { AdminDashboardSummary } from "@/types/models";
 import type { Company } from "@/types/models";
@@ -60,22 +61,37 @@ function StatTile({
 
 export function OnboardingPage() {
   const [search, setSearch] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search);
   const { data: companies, isLoading, isError, refetch } = useCompanies(deferredSearch);
-  const triggerRun = useTriggerMonitoringRun();
+  const onboard = useOnboardCompany();
   const { data: summaryData } = useDashboardSummary();
 
   // This page only renders for ADMIN users (gated by RequireRole in App.tsx).
   const summary = summaryData as AdminDashboardSummary | undefined;
 
   function handleOnboard(company: { id: string }) {
-    // First screening run — materializes the company server-side and starts
-    // real continuous monitoring on it.
-    triggerRun.mutate(company.id);
+    // Onboard the company (materialize it from dataset without scanning).
+    setErrorMessage(null);
+    onboard.mutate(company.id, {
+      onError: (err: unknown) => {
+        const message =
+          (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+          "Failed to onboard company";
+        setErrorMessage(message);
+        // Auto-clear error after 5 seconds
+        setTimeout(() => setErrorMessage(null), 5000);
+      },
+    });
   }
 
   return (
     <div className="space-y-6">
+      {errorMessage && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          {errorMessage}
+        </div>
+      )}
       <PageHeader
         title="Company Onboarding"
         description="Bring companies from the sanctions dataset under continuous monitoring."
@@ -163,8 +179,8 @@ export function OnboardingPage() {
                     // A company that has never been scanned has no Postgres
                     // row yet, so monitoring_status is always "not_monitored".
                     const alreadyOnboarded = company.monitoring_status !== "not_monitored";
-                    const isScanning =
-                      triggerRun.isPending && triggerRun.variables === company.id;
+                    const isOnboarding =
+                      onboard.isPending && onboard.variables === company.id;
                     return (
                       <TableRow
                         key={company.id}
@@ -188,7 +204,12 @@ export function OnboardingPage() {
                           <RiskBadge level={company.risk_level} />
                         </TableCell>
                         <TableCell className="text-right">
-                          {alreadyOnboarded ? (
+                          {!company.is_active ? (
+                            <div title={company.deactivation_reason || "Deactivated"} className="inline-flex items-center gap-1.5 text-sm font-medium text-destructive cursor-help">
+                              <Ban className="size-4" />
+                              Deactivated
+                            </div>
+                          ) : alreadyOnboarded ? (
                             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                               <CheckCircle2 className="size-4" />
                               Onboarded
@@ -197,11 +218,11 @@ export function OnboardingPage() {
                             <Button
                               size="sm"
                               className="cursor-pointer"
-                              disabled={isScanning}
+                              disabled={isOnboarding}
                               onClick={() => handleOnboard(company)}
                             >
                               <PlusCircle data-icon="inline-start" />
-                              {isScanning ? "Onboarding..." : "Onboard"}
+                              {isOnboarding ? "Onboarding..." : "Onboard"}
                             </Button>
                           )}
                         </TableCell>

@@ -36,7 +36,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             100000
         )
         return hmac.compare_digest(actual_hash, expected_hash)
-    except Exception:
+    except ValueError:
         return False
 
 
@@ -82,28 +82,28 @@ def decode_access_token(token: str) -> dict | None:
         parts = token.split(".")
         if len(parts) != 3:
             return None
-        
+
         encoded_header, encoded_payload, encoded_sig = parts
-        
+
         # Verify Signature
         signing_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
         key = settings.secret_key.encode("utf-8")
         expected_sig = hmac.new(key, signing_input, hashlib.sha256).digest()
-        
+
         if not hmac.compare_digest(_base64url_decode(encoded_sig), expected_sig):
             return None
-        
+
         # Decode and Parse Payload
         payload_bytes = _base64url_decode(encoded_payload)
         payload = json.loads(payload_bytes.decode("utf-8"))
-        
+
         # Verify Expiration
         exp = payload.get("exp")
         if exp is None:
             return None
         if datetime.now(timezone.utc).timestamp() > exp:
             return None
-            
+
         return payload
-    except Exception:
+    except (ValueError, json.JSONDecodeError, KeyError):
         return None

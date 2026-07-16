@@ -46,6 +46,14 @@ ENV/
 *~
 .DS_Store
 
+# AI assistant tooling (local config, machine-specific paths)
+.claude/
+.codebuddy/
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+
 # Environment variables
 .env
 .env.local

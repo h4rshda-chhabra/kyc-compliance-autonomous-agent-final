@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CompanyStatusBadge } from "@/components/status-badges";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanies, useUpdateCompanyCadence } from "@/hooks/useCompanies";
 import { logAudit } from "@/lib/auditLog";
 import {
   HIGH_RISK_THRESHOLD,
@@ -79,6 +79,7 @@ export function OfficerCompaniesPage() {
   const [intervalDraft, setIntervalDraft] = useState("");
   const { data: companies } = useCompanies(search, "active", "monitored");
   const autoScan = useAutoScanSettings();
+  const updateCadence = useUpdateCompanyCadence();
   const queryClient = useQueryClient();
 
   const monitored = companies ?? [];
@@ -312,19 +313,45 @@ export function OfficerCompaniesPage() {
                           <CompanyStatusBadge status={company.monitoring_status} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="cursor-pointer"
-                            disabled={isScanning}
-                            onClick={() => handleScanOne(company)}
-                          >
-                            <RefreshCw
-                              data-icon="inline-start"
-                              className={isScanning ? "animate-spin" : undefined}
-                            />
-                            {isScanning ? "Scanning..." : "Scan"}
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="cursor-pointer"
+                              disabled={isScanning}
+                              onClick={() => handleScanOne(company)}
+                            >
+                              <RefreshCw
+                                data-icon="inline-start"
+                                className={isScanning ? "animate-spin" : undefined}
+                              />
+                              {isScanning ? "Scanning..." : "Scan"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="cursor-pointer text-muted-foreground"
+                              disabled={updateCadence.isPending && updateCadence.variables?.companyId === company.id}
+                              onClick={() =>
+                                updateCadence.mutate({
+                                  companyId: company.id,
+                                  news_monitoring_enabled: !company.news_monitoring_enabled,
+                                })
+                              }
+                            >
+                              {company.news_monitoring_enabled ? (
+                                <>
+                                  <Pause data-icon="inline-start" />
+                                  Pause
+                                </>
+                              ) : (
+                                <>
+                                  <Play data-icon="inline-start" />
+                                  Resume
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

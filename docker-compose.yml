@@ -21,11 +21,15 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://kyc:kyc@postgres:5432/kyc_auditor
+      POSTGRES_USER: kyc
+      POSTGRES_PASSWORD: kyc
+      POSTGRES_DB: kyc_auditor
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./datasets:/datasets
+      - ./scripts:/scripts
     depends_on:
       postgres:
         condition: service_healthy

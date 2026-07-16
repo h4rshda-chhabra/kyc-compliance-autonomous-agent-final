@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Pause, Play, RefreshCw, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CompanyActiveBadge, CompanyStatusBadge } from "@/components/status-badges";
-import { useCompanies, useUpdateCompanyCadence } from "@/hooks/useCompanies";
-import { useTriggerMonitoringRun } from "@/hooks/useMonitoringRuns";
-import { logAudit } from "@/lib/auditLog";
+import { useCompanies } from "@/hooks/useCompanies";
 import type { Company } from "@/types/models";
 
 function formatDate(iso: string) {
@@ -31,8 +29,6 @@ function formatDate(iso: string) {
 export function CompaniesPage() {
   const [search, setSearch] = useState("");
   const { data: companies } = useCompanies(search, "active", "monitored");
-  const triggerRun = useTriggerMonitoringRun();
-  const updateCadence = useUpdateCompanyCadence();
 
   const list = companies ?? [];
 
@@ -75,12 +71,7 @@ export function CompaniesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.map((entry: Company) => {
-                    const isScanning =
-                      triggerRun.isPending && triggerRun.variables === entry.id;
-                    const isTogglingCadence =
-                      updateCadence.isPending && updateCadence.variables?.companyId === entry.id;
-                    return (
+                  {list.map((entry: Company) => (
                       <TableRow
                         key={entry.id}
                         className="transition-colors hover:bg-muted/40"
@@ -105,51 +96,13 @@ export function CompaniesPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="cursor-pointer"
-                              disabled={isScanning}
-                              onClick={() => {
-                                triggerRun.mutate(entry.id);
-                                logAudit("scan_triggered", "company", entry.id);
-                              }}
-                            >
-                              <RefreshCw
-                                data-icon="inline-start"
-                                className={isScanning ? "animate-spin" : undefined}
-                              />
-                              {isScanning ? "Scanning..." : "Scan"}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="cursor-pointer text-muted-foreground"
-                              disabled={isTogglingCadence}
-                              onClick={() =>
-                                updateCadence.mutate({
-                                  companyId: entry.id,
-                                  news_monitoring_enabled: !entry.news_monitoring_enabled,
-                                })
-                              }
-                            >
-                              {entry.news_monitoring_enabled ? (
-                                <>
-                                  <Pause data-icon="inline-start" />
-                                  Pause monitoring
-                                </>
-                              ) : (
-                                <>
-                                  <Play data-icon="inline-start" />
-                                  Resume monitoring
-                                </>
-                              )}
-                            </Button>
+                            <Link to={`/companies/${entry.id}`} className="text-sm text-muted-foreground hover:text-foreground">
+                              View details
+                            </Link>
                           </div>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
+                  ))}
                 </TableBody>
               </Table>
             </div>
